@@ -166,7 +166,7 @@
                     secondsTillPurchase: secondsTillPurchase[b.index],
                     cps: Game.cookiesPs
                 }
-            ].concat(strategy(Game.WriteSave(1), time - secondsTillPurchase[b.index], depth + 1));
+            ].concat(window.Shopper.strategy(Game.WriteSave(1), time - secondsTillPurchase[b.index], depth + 1));
         });
 
         resultsCookies = results.map(function (r) {
@@ -253,7 +253,7 @@
         clearTimeout(window.Shopper.shopTimeout);
 
         optimizeLoadHack();
-        action = strategy(save);
+        action = window.Shopper.strategy(save);
         unoptimizeLoadHack();
 
         buyable = (action.isUpgrade ? Game.UpgradesById : Game.ObjectsById)[action.id];
