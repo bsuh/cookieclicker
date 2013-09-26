@@ -302,7 +302,6 @@
 
     window.Shopper.test = function (strategyFn) {
         var initialSave,
-            oldFps,
             save,
             action,
             buyable,
@@ -311,8 +310,6 @@
 
         // push old state & optimize
         initialSave = Game.WriteSave(1);
-        oldFps = Game.fps;
-        Game.changeFps(1);
         optimizeLoadHack();
 
         // main loop
@@ -328,9 +325,20 @@
             Game.LoadSave(save);
             price = (buyable.price || buyable.basePrice);
 
-            while (Game.cookies < price) {
-                Game.Logic();
-                timeSpent += 1;
+            if (Game.cookies < price) {
+                while (Game.researchT > 0 || Game.pledgeT > 0) { // the only relevant variables in testing
+                    Game.Logic();
+                    timeSpent += 1 / Game.fps;
+                    if (Game.cookies >= price) {
+                        break;
+                    }
+                }
+                if (Game.cookies < price) {
+                    var time = Math.Ceil((Game.cookies - price) / Game.cookiesPs);
+                    Game.Spend(Game.cookiesPs / Game.fps);
+                    Game.Earn(time * Game.cookiesPs);
+                    timeSpent += time;
+                }
             }
             buyable.buy();
         }
@@ -340,7 +348,6 @@
 
         // pop old state & deoptimize
         unoptimizeLoadHack();
-        Game.changeFps(oldFps);
         Game.LoadSave(initialSave);
         Game.Logic();
         Game.WriteSave();
