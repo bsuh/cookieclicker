@@ -72,7 +72,7 @@
     }
 
     /* the actual strategy to choose what to buy next */
-    window.Shopper.strategy(save, time, depth) {
+    window.Shopper.strategy = function (save, time, depth) {
         if (time === undefined) {
             time = -1;
         }
@@ -201,7 +201,7 @@
         } else {
             return results[resultsIndex];
         }
-    }
+    };
 
     (function () {
         /* Canvas needed to crop icons image to specific upgrade icons */
