@@ -71,7 +71,15 @@
         Game.Popup = savedFns.gamePopup;
     }
 
-    function strategy(save, time, depth) {
+    /* the actual strategy to choose what to buy next */
+    window.Shopper.strategy(save, time, depth) {
+        if (time === undefined) {
+            time = -1;
+        }
+        if (depth === undefined) {
+            depth = 0;
+        }
+
         Game.LoadSave(save);
         Game.CalculateGains();
 
@@ -245,7 +253,7 @@
         clearTimeout(window.Shopper.shopTimeout);
 
         optimizeLoadHack();
-        action = strategy(save, -1, 0);
+        action = strategy(save);
         unoptimizeLoadHack();
 
         buyable = (action.isUpgrade ? Game.UpgradesById : Game.ObjectsById)[action.id];
