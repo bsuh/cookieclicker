@@ -334,7 +334,7 @@
                     }
                 }
                 if (Game.cookies < price) {
-                    var time = Math.ceil((Game.cookies - price) / Game.cookiesPs);
+                    var time = Math.ceil((price - Game.cookies) / Game.cookiesPs);
                     Game.Spend(Game.cookiesPs / Game.fps);
                     Game.Earn(time * Game.cookiesPs);
                     timeSpent += time;
