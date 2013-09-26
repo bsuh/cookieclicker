@@ -72,14 +72,7 @@
     }
 
     /* the actual strategy to choose what to buy next */
-    window.Shopper.strategy = function (save, time, depth) {
-        if (time === undefined) {
-            time = -1;
-        }
-        if (depth === undefined) {
-            depth = 0;
-        }
-
+    window.Shopper.strategy = function (save) {
         Game.LoadSave(save);
         Game.CalculateGains();
 
@@ -87,16 +80,14 @@
             currCookies = Game.cookies,
             currCps = Game.cookiesPs,
             secondsTillPurchase = buyables.map(function (buyable) {
-                return Math.max(Math.max((buyable.price || buyable.basePrice) - currCookies, 0) / currCps, 0.5);
+                return Math.max((buyable.price || buyable.basePrice) - currCookies) / currCps;
+            }),
+            secondsToEarn = buyables.map(function (buyable) {
+                return (buyable.price || buyable.basePrice) / currCps;
             }),
             cpsGains,
             heuristics,
-            sorted,
-            times,
-            top3,
-            results,
-            resultsCookies,
-            resultsIndex;
+            sorted;
 
         function simulateBuy(index) {
             Game.LoadSave(save);
@@ -105,17 +96,13 @@
             Game.CalculateGains();
         }
 
-        if (time == 0 || depth == 8) {
-            return [];
-        }
-
         cpsGains = buyables.map(function (buyable, index) {
             simulateBuy(index);
             return Game.cookiesPs - currCps;
         });
 
         heuristics = buyables.map(function (buyable, index) {
-            return cpsGains[index] / secondsTillPurchase[index];
+            return cpsGains[index] / Math.max(secondsTillPurchase[index], 0.5);
         });
 
         sorted = buyables.map(function (b, i) {
@@ -127,80 +114,11 @@
         });
         sorted.reverse();
 
-        if (depth == 0 && window.debug) {
-            console.log(sorted.map(function (b) {
-                return b.buyable.name + ' ' + Beautify(cpsGains[b.index]) + ' ' + Beautify(heuristics[b.index]);
-            }));
-        }
-
-        if (time < 0) {
-            times = [];
-            times.push(secondsTillPurchase[sorted[0].index]);
-            if (currCps > 10) {
-                times.push(secondsTillPurchase[sorted[1].index]);
-                times.push(secondsTillPurchase[sorted[2].index]);
-            }
-            time = Math.min(
-                Math.min.apply(Math, times) * 10,
-                Math.max.apply(Math, times) * 1.5);
-        }
-
-        top3 = [];
-        sorted.forEach(function (b) {
-            if (top3.length == (depth < 2 ? 3 : 1)) {
-                return;
-            }
-
-            if (secondsTillPurchase[b.index] <= time) {
-                top3.push(b);
-            }
-        });
-
-        results = top3.map(function (b) {
-            simulateBuy(b.index);
-            return [
-                {
-                    name: b.buyable.name,
-                    id: b.buyable.id,
-                    isUpgrade: !b.buyable.price,
-                    secondsTillPurchase: secondsTillPurchase[b.index],
-                    cps: Game.cookiesPs
-                }
-            ].concat(window.Shopper.strategy(Game.WriteSave(1), time - secondsTillPurchase[b.index], depth + 1));
-        });
-
-        resultsCookies = results.map(function (r) {
-            var cookiesMade = 0,
-                timeLeft = time,
-                cps = currCps;
-
-            if (depth == 0 && window.debug) {
-                console.log('[' + r.map(function (x) {
-                    return x.name;
-                }).join(', ') + ']');
-            }
-
-            r.forEach(function (buy) {
-                cookiesMade += cps * buy.secondsTillPurchase;
-                timeLeft -= buy.secondsTillPurchase;
-                cps = buy.cps;
-                if (depth == 0 && window.debug) {
-                    console.log('t: ' + Beautify(time - timeLeft) + ', cookies:' + Beautify(cookiesMade));
-                }
-            });
-
-            return cookiesMade + timeLeft * cps;
-        });
-
-        resultsIndex = resultsCookies.indexOf(Math.max.apply(Math, resultsCookies));
-
-        if (resultsIndex == -1) {
-            return [];
-        } else if (depth == 0) {
-            return results[resultsIndex][0];
-        } else {
-            return results[resultsIndex];
-        }
+        return {
+            id: sorted[0].buyable.id,
+            isUpgrade: !sorted[0].buyable.price,
+            cps: currCps + cpsGains[sorted[0].index]
+        };
     };
 
     (function () {
@@ -246,6 +164,7 @@
             buyable,
             price,
             timeToWait,
+            timeToEarn,
             action,
             iconUrl,
             firstWait = true;
@@ -281,15 +200,16 @@
                 setTimeout(window.Shopper.start);
             } else if (firstWait == true) {
                 timeToWait = (price - Game.cookies) / Game.cookiesPs;
+                timeToEarn = price / Game.cookiesPs;
                 notify('Waiting till ' + new Date(new Date().getTime() + timeToWait * 1000).toLocaleString('en-US') +
                     ' to buy ' + buyable.name +
                     ' +' + Beautify(action.cps - Game.cookiesPs) + '/s ' +
-                    ' +' + Beautify((action.cps - Game.cookiesPs) / timeToWait) + '/s^2', iconUrl);
+                    ' +' + Beautify((action.cps - Game.cookiesPs) / timeToEarn) + '/s^2', iconUrl);
 
-                window.Shopper.shopTimeout = setTimeout(doBuy, 1000);
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.max(1, timeToWait));
                 firstWait = false;
             } else {
-                window.Shopper.shopTimeout = setTimeout(doBuy, 1000);
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.max(1, timeToWait));
             }
         }
 
@@ -318,11 +238,12 @@
 
             save = Game.WriteSave(1);
             action = strategyFn(save);
-            console.log(action);
 
             buyable = (action.isUpgrade ? Game.UpgradesById : Game.ObjectsById)[action.id];
+            console.log(buyable.name);
 
             Game.LoadSave(save);
+            Game.CalculateGains();
             price = (buyable.price || buyable.basePrice);
 
             if (Game.cookies < price) {
@@ -335,7 +256,6 @@
                 }
                 if (Game.cookies < price) {
                     var time = Math.ceil((price - Game.cookies) / Game.cookiesPs);
-                    Game.Spend(Game.cookiesPs / Game.fps);
                     Game.Earn(time * Game.cookiesPs);
                     timeSpent += time;
                 }
