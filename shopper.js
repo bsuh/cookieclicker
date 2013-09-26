@@ -1,19 +1,77 @@
 (function () {
-    if (window.Notification) {
-        var permissionButton = document.createElement('button'),
-            buttonContent = document.createTextNode('Enable desktop notifications');
+    window.Shopper = {};
 
-        permissionButton.appendChild(buttonContent);
-        document.getElementById('topBar').children[0].appendChild(permissionButton);
-        document.getElementById('topBar').children[0].removeChild(
-            document.getElementById('links'));
+    /* Speed up testing by being able to change FPS to 1 */
+    Game.changeFps = function (newFps) {
+        function setNewFrameCount(obj, prop) {
+            obj[prop] = Math.ceil(obj[prop] / Game.fps * newFps);
+        }
 
-        permissionButton.addEventListener('click', function () {
-            window.Notification.requestPermission();
-        });
+        var i;
+
+        setNewFrameCount(Game, 'autoclickerDetected');
+        setNewFrameCount(Game, 'baseResearchTime');
+        setNewFrameCount(Game, 'clickFrenzy');
+        setNewFrameCount(Game, 'frenzy');
+        setNewFrameCount(Game, 'pledgeT');
+        setNewFrameCount(Game, 'researchT');
+        setNewFrameCount(Game, 'T');
+        setNewFrameCount(Game, 'TickerAge');
+        setNewFrameCount(Game.goldenCookie, 'delay');
+        setNewFrameCount(Game.goldenCookie, 'life');
+
+        for (i in Game.cookieNumbers) {
+            if (Game.cookieNumbers[i].life != -1) {
+                setNewFrameCount(Game.cookieNumbers[i], 'life');
+            }
+        }
+        for (i in Game.cookieParticles) {
+            if (Game.cookieParticles[i].life != -1) {
+                setNewFrameCount(Game.cookieParticles[i], 'life');
+            }
+        }
+        for (i in Game.particles) {
+            if (Game.particles[i].life != -1) {
+                setNewFrameCount(Game.particles[i], 'life');
+            }
+        }
+
+        Game.fps = newFps;
+    };
+
+    /* Utility functions to speed up loading & saving of games */
+    var savedFns = {
+        drawFunction: [],
+        special: [],
+        specialDrawFunction: [],
+        gamePopup: Game.Popup
+    };
+
+    function optimizeLoadHack() {
+        for (var i in Game.ObjectsById) {
+            savedFns.drawFunction[i] = Game.ObjectsById[i].drawFunction;
+            savedFns.special[i] = Game.ObjectsById[i].special;
+            savedFns.specialDrawFunction[i] = Game.ObjectsById[i].specialDrawFunction;
+
+            Game.ObjectsById[i].drawFunction = function () {
+            };
+            Game.ObjectsById[i].special = null;
+            Game.ObjectsById[i].specialDrawFunction = null;
+        }
+        Game.Popup = function () {
+        };
     }
 
-    function cps(save, time, depth) {
+    function unoptimizeLoadHack() {
+        for (var i in Game.ObjectsById) {
+            Game.ObjectsById[i].drawFunction = savedFns.drawFunction[i];
+            Game.ObjectsById[i].special = savedFns.special[i];
+            Game.ObjectsById[i].specialDrawFunction = savedFns.specialDrawFunction[i];
+        }
+        Game.Popup = savedFns.gamePopup;
+    }
+
+    function strategy(save, time, depth) {
         Game.LoadSave(save);
         Game.CalculateGains();
 
@@ -56,14 +114,14 @@
             return { index: i, buyable: b }
         });
 
-        sorted.sort(function(a, b) {
+        sorted.sort(function (a, b) {
             return heuristics[a.index] > heuristics[b.index] ? 1 : -1;
         });
         sorted.reverse();
 
         if (depth == 0 && window.debug) {
             console.log(sorted.map(function (b) {
-                return b.buyable.name + ' ' + Beautify(cpsGains[b.index]) + ' ' + Beautify(cpsAccel[b.index]);
+                return b.buyable.name + ' ' + Beautify(cpsGains[b.index]) + ' ' + Beautify(heuristics[b.index]);
             }));
         }
 
@@ -75,8 +133,8 @@
                 times.push(secondsTillPurchase[sorted[2].index]);
             }
             time = Math.min(
-                    Math.min.apply(Math, times) * 10,
-                    Math.max.apply(Math, times) * 1.5);
+                Math.min.apply(Math, times) * 10,
+                Math.max.apply(Math, times) * 1.5);
         }
 
         top3 = [];
@@ -92,13 +150,15 @@
 
         results = top3.map(function (b) {
             simulateBuy(b.index);
-            return [{
-                name: b.buyable.name,
-                id: b.buyable.id,
-                isUpgrade: !b.buyable.price,
-                secondsTillPurchase: secondsTillPurchase[b.index],
-                cps: Game.cookiesPs
-            }].concat(cps(Game.WriteSave(1), time - secondsTillPurchase[b.index], depth + 1));
+            return [
+                {
+                    name: b.buyable.name,
+                    id: b.buyable.id,
+                    isUpgrade: !b.buyable.price,
+                    secondsTillPurchase: secondsTillPurchase[b.index],
+                    cps: Game.cookiesPs
+                }
+            ].concat(strategy(Game.WriteSave(1), time - secondsTillPurchase[b.index], depth + 1));
         });
 
         resultsCookies = results.map(function (r) {
@@ -107,7 +167,9 @@
                 cps = currCps;
 
             if (depth == 0 && window.debug) {
-                console.log('[' + r.map(function (x) { return x.name; }).join(', ') + ']');
+                console.log('[' + r.map(function (x) {
+                    return x.name;
+                }).join(', ') + ']');
             }
 
             r.forEach(function (buy) {
@@ -133,76 +195,66 @@
         }
     }
 
-    var savedFns = {
-        drawFunction: [],
-        special: [],
-        specialDrawFunction: [],
-        gamePopup: Game.Popup
-    };
+    (function () {
+        /* Canvas needed to crop icons image to specific upgrade icons */
+        var img = new Image();
+        img.src = 'http://orteil.dashnet.org/cookieclicker/img/icons.png?v=1';
 
-    function optimizeLoadHack() {
-        for (var i in Game.ObjectsById) {
-            savedFns.drawFunction[i] = Game.ObjectsById[i].drawFunction;
-            savedFns.special[i] = Game.ObjectsById[i].special;
-            savedFns.specialDrawFunction[i] = Game.ObjectsById[i].specialDrawFunction;
+        var canvas = document.createElement('canvas');
+        canvas.width = 48;
+        canvas.height = 48;
+        canvas.style.width = '48px';
+        canvas.style.height = '48px';
+        var ctx = canvas.getContext('2d');
 
-            Game.ObjectsById[i].drawFunction = function () {};
-            Game.ObjectsById[i].special = null;
-            Game.ObjectsById[i].specialDrawFunction = null;
-        }
-        Game.Popup = function () {};
+        window.Shopper.getIconUrl = function (buyable) {
+            if (!!buyable.price) {
+                return 'http://orteil.dashnet.org/cookieclicker/img/' + buyable.icon + '.png';
+            } else {
+                ctx.drawImage(img, 48 * buyable.icon[0], 48 * buyable.icon[1], 48, 48, 0, 0, 48, 48);
+                return canvas.toDataURL();
+            }
+        };
+    }());
+
+    if (window.Notification) {
+        var permissionButton = document.createElement('button'),
+            buttonContent = document.createTextNode('Enable desktop notifications');
+
+        permissionButton.appendChild(buttonContent);
+        document.getElementById('topBar').children[0].appendChild(permissionButton);
+        document.getElementById('topBar').children[0].removeChild(
+            document.getElementById('links'));
+
+        permissionButton.addEventListener('click', function () {
+            window.Notification.requestPermission();
+        });
     }
 
-    function unoptimizeLoadHack() {
-        for (var i in Game.ObjectsById) {
-            Game.ObjectsById[i].drawFunction = savedFns.drawFunction[i];
-            Game.ObjectsById[i].special = savedFns.special[i];
-            Game.ObjectsById[i].specialDrawFunction = savedFns.specialDrawFunction[i];
-        }
-        Game.Popup = savedFns.gamePopup;
-    }
-    
-    var img = new Image();
-    img.src = 'http://orteil.dashnet.org/cookieclicker/img/icons.png?v=1';
+    window.Shopper.shopTimeout = null;
 
-    var canvas = document.createElement('canvas');
-    canvas.width = 48;
-    canvas.height = 48;
-    canvas.style.width = '48px';
-    canvas.style.height = '48px';
-    var ctx = canvas.getContext('2d');
-
-    window.tryBuy = function () {
+    window.Shopper.start = function () {
         var save = Game.WriteSave(1),
-            idealBuy,
+            buyable,
             price,
             timeToWait,
-            bestAction,
+            action,
             iconUrl,
             firstWait = true;
 
-        if (window.tryBuyTimeoutId) {
-            clearTimeout(window.tryBuyTimeoutId);
-        }
+        clearTimeout(window.Shopper.shopTimeout);
 
         optimizeLoadHack();
-        bestAction = cps(save, -1, 0);
+        action = strategy(save, -1, 0);
         unoptimizeLoadHack();
 
-        idealBuy = bestAction.isUpgrade ?
-            Game.UpgradesById[bestAction.id] :
-            Game.ObjectsById[bestAction.id];
+        buyable = (action.isUpgrade ? Game.UpgradesById : Game.ObjectsById)[action.id];
 
         Game.LoadSave(save);
         Game.CalculateGains();
-        price = (idealBuy.price || idealBuy.basePrice);
+        price = (buyable.price || buyable.basePrice);
 
-        if (bestAction.isUpgrade) {
-            ctx.drawImage(img, 48 * idealBuy.icon[0], 48 * idealBuy.icon[1], 48, 48, 0, 0, 48, 48);
-            iconUrl = canvas.toDataURL();
-        } else {
-            iconUrl = 'http://orteil.dashnet.org/cookieclicker/img/' + idealBuy.icon + '.png';
-        }
+        iconUrl = window.Shopper.getIconUrl(buyable);
 
         function notify(msg, iconUrl) {
             console.log(msg);
@@ -216,19 +268,73 @@
 
         function doBuy() {
             if (Game.cookies >= price) {
-                notify('Buying ' + idealBuy.name, iconUrl);
-                idealBuy.buy();
-                setTimeout(function () { tryBuy() });
+                notify('Buying ' + buyable.name, iconUrl);
+                buyable.buy();
+                setTimeout(window.Shopper.start);
             } else if (firstWait == true) {
                 timeToWait = (price - Game.cookies) / Game.cookiesPs;
-                notify('Waiting till ' + new Date(new Date().getTime() + timeToWait * 1000).toLocaleString('en-US') + ' to buy ' + idealBuy.name + ' +' + Beautify(bestAction.cps - Game.cookiesPs) + '/s +' + Beautify((bestAction.cps - Game.cookiesPs) / timeToWait) + '/s^2', iconUrl);
-                window.tryBuyTimeoutId = setTimeout(doBuy, 1000);
+                notify('Waiting till ' + new Date(new Date().getTime() + timeToWait * 1000).toLocaleString('en-US') +
+                    ' to buy ' + buyable.name +
+                    ' +' + Beautify(action.cps - Game.cookiesPs) + '/s ' +
+                    ' +' + Beautify((action.cps - Game.cookiesPs) / timeToWait) + '/s^2', iconUrl);
+
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000);
                 firstWait = false;
             } else {
-                window.tryBuyTimeoutId = setTimeout(doBuy, 1000);
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000);
             }
         }
 
         setTimeout(doBuy);
-    }
+    };
+
+    window.Shopper.stop = function () {
+        window.clearTimeout(window.Shopper.shopTimeout);
+    };
+
+    window.Shopper.test = function (strategyFn) {
+        var initialSave,
+            oldFps,
+            save,
+            action,
+            buyable,
+            price,
+            timeSpent = 0;
+
+        // push old state & optimize
+        initialSave = Game.WriteSave(1);
+        oldFps = Game.fps;
+        Game.changeFps(1);
+        optimizeLoadHack();
+
+        // main loop
+        while (timeSpent < 3600) {
+            console.log('Time spent: ' + Beautify(timeSpent));
+
+            save = Game.WriteSave(1);
+            action = strategyFn(save);
+            console.log(action);
+
+            buyable = (action.isUpgrade ? Game.UpgradesById : Game.ObjectsById)[action.id];
+
+            Game.LoadSave(save);
+            price = (buyable.price || buyable.basePrice);
+
+            while (Game.cookies < price) {
+                Game.Logic();
+                timeSpent += 1;
+            }
+            buyable.buy();
+        }
+
+        Game.CalculateGains();
+        console.log('Final CPS @ ' + Beautify(timeSpent) + ': ' + Game.cookiesPs);
+
+        // pop old state & deoptimize
+        unoptimizeLoadHack();
+        Game.changeFps(oldFps);
+        Game.LoadSave(initialSave);
+        Game.Logic();
+        Game.WriteSave();
+    };
 }());
