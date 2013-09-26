@@ -206,10 +206,10 @@
                     ' +' + Beautify(action.cps - Game.cookiesPs) + '/s ' +
                     ' +' + Beautify((action.cps - Game.cookiesPs) / timeToEarn) + '/s^2', iconUrl);
 
-                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.max(1, timeToWait));
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.min(1, timeToWait));
                 firstWait = false;
             } else {
-                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.max(1, timeToWait));
+                window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.min(1, timeToWait));
             }
         }
 
