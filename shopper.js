@@ -195,7 +195,11 @@
 
         function doBuy() {
             if (Game.cookies >= price) {
-                notify('Buying ' + buyable.name, iconUrl);
+                timeToEarn = price / Game.cookiesPs;
+                notify('Buying ' + buyable.name +
+                    ' +' + Beautify(action.cps - Game.cookiesPs) + '/s' +
+                    ' +' + Beautify((action.cps - Game.cookiesPs) / timeToEarn) + '/s^2', iconUrl);
+
                 buyable.buy();
                 setTimeout(window.Shopper.start);
             } else if (firstWait == true) {
@@ -203,7 +207,7 @@
                 timeToEarn = price / Game.cookiesPs;
                 notify('Waiting till ' + new Date(new Date().getTime() + timeToWait * 1000).toLocaleString('en-US') +
                     ' to buy ' + buyable.name +
-                    ' +' + Beautify(action.cps - Game.cookiesPs) + '/s ' +
+                    ' +' + Beautify(action.cps - Game.cookiesPs) + '/s' +
                     ' +' + Beautify((action.cps - Game.cookiesPs) / timeToEarn) + '/s^2', iconUrl);
 
                 window.Shopper.shopTimeout = setTimeout(doBuy, 1000 * Math.min(1, timeToWait));
