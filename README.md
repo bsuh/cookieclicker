@@ -1,2 +1,2 @@
-copy & paste shopper.js contents into browser console  
-run Shopper.start()
+copy & paste shopper.js contents into browser console
+run Shopper.startAutobuyer()
