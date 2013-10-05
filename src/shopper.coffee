@@ -8,7 +8,7 @@ Shopper.scheduleBuy = (item, bank, callback) ->
     setTimeout(callback, 100)
   else
     timeoutId = setTimeout(
-      (-> Shopper.scheduleBuy(item, callback)),
+      (-> Shopper.scheduleBuy(item, bank, callback)),
       1000 * Math.min(1, Shopper.secondsTillPurchase(item))
     )
 
