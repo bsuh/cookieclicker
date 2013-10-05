@@ -1,5 +1,8 @@
 Shopper = window.Shopper = window.Shopper or {}
 
+if Shopper.stopAutoClicker
+  Shopper.stopAutoClicker()
+
 goldenCookieIntervalId = normalCookieIntervalId = null
 
 Shopper.startAutoClicker = (clicksPerSecond = 5) ->

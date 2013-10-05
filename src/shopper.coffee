@@ -2,6 +2,9 @@ timeoutId = null
 
 Shopper = window.Shopper = window.Shopper or {}
 
+if Shopper.stopAutobuyer
+  Shopper.stopAutobuyer()
+
 Shopper.scheduleBuy = (item, bank, callback) ->
   if Game.cookies >= ((item.price or item.basePrice) + bank)
     item.buy()
