@@ -16,14 +16,18 @@ Shopper.scheduleBuy = (item, bank, callback) ->
     )
 
 Shopper.startAutobuyer = (bank = 0) ->
-  b = bank
+  Shopper.stopAutobuyer()
+
+  noBuffCps = Shopper.getCps() / (if Game.frenzy > 0 then Game.frenzyPower else 1)
   if bank == -1
-    b = Shopper.getCps() * 12000
+    b = noBuffCps * 12000
   else if bank == -2
-    b = Shopper.getCps() * 12000 * 7
+    b = noBuffCps * 12000 * 7
+  else
+    b = bank
 
   item = Shopper.strategy()
-  window.console.log("Will buy #{item.name} next")
+  window.console.log("Will buy #{item.name} next. Bank: #{Beautify(b)}")
   Shopper.scheduleBuy(item, b, (-> Shopper.startAutobuyer(bank)))
 
 Shopper.stopAutobuyer = ->
