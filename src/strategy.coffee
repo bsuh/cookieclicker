@@ -3,6 +3,9 @@ Shopper = window.Shopper = window.Shopper or {};
 Shopper.strategy = ->
   Shopper.optimizeLoad();
 
+  if Game.storeToRebuild
+    Game.RebuildStore()
+
   items = Game.UpgradesInStore.concat(Game.ObjectsById)
   cpsGainsPs = items.map(Shopper.cpsGainPerSecond)
   zipped = zip(items, cpsGainsPs)
