@@ -10,9 +10,15 @@ Shopper.strategy = ->
     if a[1] == b[1]
       return -(a[0].price || a[0].basePrice) + (b[0].price || b[0].basePrice)
     else if (a[1] > b[1])
-      return -Shopper.secondsSavedByPurchase(b[0], a[0])
+      timeSaved = (Shopper.secondsSavedByPurchase(b[0], a[0]))
+      if timeSaved == 0
+        return a[1]-b[1]
+      return -timeSaved
     else
-      return Shopper.secondsSavedByPurchase(a[0], b[0])
+      timeSaved = Shopper.secondsSavedByPurchase(a[0], b[0])
+      if timeSaved == 0
+        return a[1]-b[1]
+      return timeSaved
   ).map((x) -> x[0])
 
   Shopper.unoptimizeLoad();
