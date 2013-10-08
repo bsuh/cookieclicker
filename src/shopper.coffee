@@ -8,7 +8,7 @@ if Shopper.stopAutobuyer
 Shopper.scheduleBuy = (item, bank, callback) ->
   if Game.cookies >= ((item.price or item.basePrice) + bank)
     item.buy()
-    setTimeout(callback, 100)
+    callback()
   else
     timeoutId = setTimeout(
       (-> Shopper.scheduleBuy(item, bank, callback)),
