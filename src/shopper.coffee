@@ -1,4 +1,5 @@
-timeoutId = null
+scheduleBuyTimeoutId = null
+checkStrategyTimeoutId = null
 
 Shopper = window.Shopper = window.Shopper or {}
 
@@ -7,10 +8,12 @@ if Shopper.stopAutobuyer
 
 Shopper.scheduleBuy = (item, bank, callback) ->
   if Game.cookies >= ((item.price or item.basePrice) + bank)
+    [item.clickFunction, savedFn] = [null, item.clickFunction]
     item.buy()
+    item.clickFunction = savedFn
     callback()
   else
-    timeoutId = setTimeout(
+    scheduleBuyTimeoutId = setTimeout(
       (-> Shopper.scheduleBuy(item, bank, callback)),
       1000 * Math.min(1, Shopper.secondsTillPurchase(item))
     )
@@ -27,8 +30,11 @@ Shopper.startAutobuyer = (bank = 0) ->
     b = bank
 
   item = Shopper.strategy()
-  window.console.log("Will buy #{item.name} next. Bank: #{Beautify(b)}")
   Shopper.scheduleBuy(item, b, (-> Shopper.startAutobuyer(bank)))
 
+  # recalculate choice in 10 seconds, in case of research unlocked upgrades
+  checkStrategyTimeoutId = setTimeout((-> Shopper.startAutobuyer(bank)), 10000)
+
 Shopper.stopAutobuyer = ->
-  clearTimeout(timeoutId)
+  clearTimeout(scheduleBuyTimeoutId)
+  clearTimeout(checkStrategyTimeoutId)

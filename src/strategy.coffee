@@ -23,7 +23,6 @@ Shopper.strategy = ->
 
   Shopper.unoptimizeLoad();
 
-  window.console.log(sortedItems.map((x) -> x.name))
   return sortedItems[items.length - 1]
 
 zip = (args...) ->

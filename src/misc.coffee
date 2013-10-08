@@ -3,6 +3,7 @@ savedFns =
   drawFunction: []
   special: []
   specialDrawFunction: []
+  clickFunction: []
   popup: noop
   l: noop
 
@@ -14,6 +15,7 @@ Shopper.optimizeLoad = ->
     [obj.drawFunction, savedFns.drawFunction[id]] = [noop, obj.drawFunction]
     [obj.special, savedFns.special[id]] = [null, obj.special]
     [obj.specialDrawFunction, savedFns.specialDrawFunction[id]] = [null, obj.specialDrawFunction]
+    [obj.clickFunction , savedFns.clickFunction[id]] = [null, obj.clickFunction]
 
   [Game.Popup, savedFns.popup] = [noop, Game.Popup]
   [window.l, savedFns.l] = [->
@@ -32,6 +34,7 @@ Shopper.unoptimizeLoad = ->
     obj.drawFunction = savedFns.drawFunction[id]
     obj.special = savedFns.special[id]
     obj.specialDrawFunction = savedFns.specialDrawFunction[id]
+    obj.clickFunction = savedFns.clickFunction[id]
 
   Game.Popup = savedFns.popup
   window.l = savedFns.l
@@ -48,4 +51,3 @@ Shopper.safeCall = (fn) ->
   [Game.frenzy, Game.frenzyPower, Game.clickFrenzy, gc] = JSON.parse(unrestored)
   shallowCopy(Game.goldenCookie, gc)
   ret
-
