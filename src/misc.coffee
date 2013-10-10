@@ -3,7 +3,7 @@ savedFns =
   drawFunction: []
   special: []
   specialDrawFunction: []
-  clickFunction: []
+  clickFunction: null
   popup: noop
   l: noop
 
@@ -15,7 +15,6 @@ Shopper.optimizeLoad = ->
     [obj.drawFunction, savedFns.drawFunction[id]] = [noop, obj.drawFunction]
     [obj.special, savedFns.special[id]] = [null, obj.special]
     [obj.specialDrawFunction, savedFns.specialDrawFunction[id]] = [null, obj.specialDrawFunction]
-    [obj.clickFunction , savedFns.clickFunction[id]] = [null, obj.clickFunction]
 
   [Game.Popup, savedFns.popup] = [noop, Game.Popup]
   [window.l, savedFns.l] = [->
@@ -29,15 +28,20 @@ Shopper.optimizeLoad = ->
         height: 0
   , window.l]
 
+  oneMindUpgrade = Game.UpgradesById[69]
+  [oneMindUpgrade.clickFunction, savedFns.clickFunction] = [null, oneMindUpgrade.clickFunction]
+
 Shopper.unoptimizeLoad = ->
   for id, obj in Game.ObjectsById
     obj.drawFunction = savedFns.drawFunction[id]
     obj.special = savedFns.special[id]
     obj.specialDrawFunction = savedFns.specialDrawFunction[id]
-    obj.clickFunction = savedFns.clickFunction[id]
 
   Game.Popup = savedFns.popup
   window.l = savedFns.l
+
+  oneMindUpgrade = Game.UpgradesById[69]
+  oneMindUpgrade.clickFunction = savedFns.clickFunction
 
 Shopper.safeCall = (fn) ->
   shallowCopy = (dst, src) ->
