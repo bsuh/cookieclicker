@@ -1,23 +1,38 @@
 noop = -> undefined
-savedFns =
+savedGlobalFns =
+  popup: noop
+  l: noop
+
+savedObjFns =
   drawFunction: []
   special: []
   specialDrawFunction: []
-  clickFunction: null
-  popup: noop
-  l: noop
+  clickFunction: []
+
+savedUpgradeFns =
+  drawFunction: []
+  special: []
+  specialDrawFunction: []
+  clickFunction: []
 
 
 Shopper = window.Shopper = window.Shopper or {}
 
 Shopper.optimizeLoad = ->
   for id, obj in Game.ObjectsById
-    [obj.drawFunction, savedFns.drawFunction[id]] = [noop, obj.drawFunction]
-    [obj.special, savedFns.special[id]] = [null, obj.special]
-    [obj.specialDrawFunction, savedFns.specialDrawFunction[id]] = [null, obj.specialDrawFunction]
+    [obj.drawFunction, savedObjFns.drawFunction[id]] = [noop, obj.drawFunction]
+    [obj.special, savedObjFns.special[id]] = [null, obj.special]
+    [obj.specialDrawFunction, savedObjFns.specialDrawFunction[id]] = [null, obj.specialDrawFunction]
+    [obj.clickFunction, savedObjFns.clickFunction[id]] = [null, obj.clickFunction]
 
-  [Game.Popup, savedFns.popup] = [noop, Game.Popup]
-  [window.l, savedFns.l] = [->
+  for id, upgrade in Game.UpgradesById
+    [upgrade.drawFunction, savedUpgradeFns.drawFunction[id]] = [noop, upgrade.drawFunction]
+    [upgrade.special, savedUpgradeFns.special[id]] = [null, upgrade.special]
+    [upgrade.specialDrawFunction, savedUpgradeFns.specialDrawFunction[id]] = [null, upgrade.specialDrawFunction]
+    [upgrade.clickFunction, savedUpgradeFns.clickFunction[id]] = [null, upgrade.clickFunction]
+
+  [Game.Popup, savedGlobalFns.popup] = [noop, Game.Popup]
+  [window.l, savedGlobalFns.l] = [->
       style: {}
       getBoundingClientRect: ->
         top: 0
@@ -28,20 +43,21 @@ Shopper.optimizeLoad = ->
         height: 0
   , window.l]
 
-  oneMindUpgrade = Game.UpgradesById[69]
-  [oneMindUpgrade.clickFunction, savedFns.clickFunction] = [null, oneMindUpgrade.clickFunction]
-
 Shopper.unoptimizeLoad = ->
   for id, obj in Game.ObjectsById
-    obj.drawFunction = savedFns.drawFunction[id]
-    obj.special = savedFns.special[id]
-    obj.specialDrawFunction = savedFns.specialDrawFunction[id]
+    obj.drawFunction = savedObjFns.drawFunction[id]
+    obj.special = savedObjFns.special[id]
+    obj.specialDrawFunction = savedObjFns.specialDrawFunction[id]
+    obj.clickFunction = savedObjFns.clickFunction[id]
 
-  Game.Popup = savedFns.popup
-  window.l = savedFns.l
+  for id, upgrade in Game.UpgradesById
+    upgrade.drawFunction = savedUpgradeFns.drawFunction[id]
+    upgrade.special = savedUpgradeFns.special[id]
+    upgrade.specialDrawFunction = savedUpgradeFns.specialDrawFunction[id]
+    upgrade.clickFunction = savedUpgradeFns.clickFunction[id]
 
-  oneMindUpgrade = Game.UpgradesById[69]
-  oneMindUpgrade.clickFunction = savedFns.clickFunction
+  Game.Popup = savedGlobalFns.popup
+  window.l = savedGlobalFns.l
 
 Shopper.safeCall = (fn) ->
   shallowCopy = (dst, src) ->
