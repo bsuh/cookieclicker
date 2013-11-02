@@ -65,9 +65,9 @@ Shopper.safeCall = (fn) ->
       dst[k] = v
 
   initialState = Game.WriteSave(1)
-  unrestored = JSON.stringify([Game.frenzy, Game.frenzyPower, Game.clickFrenzy, Game.goldenCookie])
+  unrestored = JSON.stringify([Game.frenzy, Game.frenzyPower, Game.clickFrenzy, Game.goldenCookie, Game.wrinklers])
   ret = fn()
   Game.LoadSave(initialState)
-  [Game.frenzy, Game.frenzyPower, Game.clickFrenzy, gc] = JSON.parse(unrestored)
+  [Game.frenzy, Game.frenzyPower, Game.clickFrenzy, gc, Game.wrinklers] = JSON.parse(unrestored)
   shallowCopy(Game.goldenCookie, gc)
   ret
